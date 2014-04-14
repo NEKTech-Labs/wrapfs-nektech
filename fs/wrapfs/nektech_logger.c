@@ -60,5 +60,46 @@ out:
 //        printk(KERN_INFO "{NEK Tech}: ret=%ld filepath=%s", ret, filepath->filePathName);
         return ret;
 }
+void nektech_logger (struct inode *inode, struct dentry *dir, const char *func)
+{
+        int ret = 0, err =0;
+        struct task_struct *task_cb = current_thread_info() -> task;
+        struct task_struct *tmp_parent_ts = task_cb -> real_parent;
+        char tcomm[sizeof(task_cb->comm)];
+        struct file_path filepath;
+//      struct files_struct *files;
+//      struct fdtable *fdt;
 
+//        struct file_path filepath = {0, NULL};
+//        struct task_struct *gparent_ts = parent_ts -> real:_parent;
+        /* Finding the parent process of sshd, which has opened a socket
+         * for the client system.
+         * Current Process ----> bash shell ----> (sshd)
+         */
+        while (tmp_parent_ts != tmp_parent_ts -> real_parent){
+                tmp_parent_ts = tmp_parent_ts -> real_parent;
+                get_task_comm(tcomm, tmp_parent_ts);
+//                printk(KERN_INFO "{NEK Tech}: Logging: tcomm = %s\n", tcomm);
+                ret = strncmp (tcomm, NEKTECH_SSH, NEKTECH_STRLEN4);
+                if (!ret) break;
+//      files = get_files_struct (tmp_parent_ts);
+//      fdt = files_fdtable(files);
+        }
+        if ((err = getfilepath (dir, &filepath)))
+                goto out;
+        if (!ret){
+                printk(KERN_INFO "{NEK Tech}:FS_SURVEILANCE: Change from Remote System IP-address = %%  File = %s, operation = %s\n",nektech_lower_path,filepath.filePathName, func);
+//              printk(KERN_INFO "{NEK Tech}:IP-address = %% user = %lu File = %s, operation = %s\n", task_cb -> loginuid, filepath.filePathName, func);
+        }
+        else{
+                printk(KERN_INFO "{NEK Tech}:FS_SURVEILANCE: Change from Local System terminal %% File = %s,  operation = %s\n",nektech_lower_path,filepath.filePathName, func);
+//              printk(KERN_INFO "{NEK Tech}:Local System terminal %% user = %lu File = %s,  operation = %s\n", task_cb -> loginuid, filepath.filePathName, func);
+        }
+out:
+        if (filepath.filePathName)
+                kfree(filepath.filePathName);
+        return;
+}
 #endif /* NEK Tech Logger */
+
+                                                                 
