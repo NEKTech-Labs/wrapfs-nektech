@@ -60,3 +60,5 @@ out:
 //        printk(KERN_INFO "{NEK Tech}: ret=%ld filepath=%s", ret, filepath->filePathName);
         return ret;
 }
+
+#endif /* NEK Tech Logger */
