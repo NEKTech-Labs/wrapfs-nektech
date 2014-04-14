@@ -11,6 +11,10 @@
 
 #include "wrapfs.h"
 #include <linux/module.h>
+#ifdef NEKTECH_LOGGER
+        char *nektech_lower_path;
+#endif
+/*
 
 /*
  * There is no need to lock the wrapfs_super_info's rwsem as there is no
@@ -98,6 +102,12 @@ static int wrapfs_read_super(struct super_block *sb, void *raw_data, int silent)
 		printk(KERN_INFO
 		       "wrapfs: mounted on top of %s type %s\n",
 		       dev_name, lower_sb->s_type->name);
+#ifdef NEKTECH_LOGGER
+        nektech_lower_path=(char*)kmalloc(strlen(dev_name)+1,GFP_KERNEL);
+        memcpy((void*) nektech_lower_path,(void*) dev_name,strlen(dev_name));
+        nektech_lower_path[strlen(dev_name)]='\0';
+#endif
+
 	goto out; /* all is well */
 
 	/* no longer needed: free_dentry_private_data(sb->s_root); */
@@ -158,6 +168,10 @@ out:
 
 static void __exit exit_wrapfs_fs(void)
 {
+#ifdef NEKTECH_LOGGER
+        if (nektech_lower_path) kfree(nektech_lower_path);
+#endif
+       
 	wrapfs_destroy_inode_cache();
 	wrapfs_destroy_dentry_cache();
 	unregister_filesystem(&wrapfs_fs_type);
