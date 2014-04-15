@@ -10,6 +10,7 @@
  */
 
 #include "wrapfs.h"
+#include "nektech_logger.h"
 
 static int wrapfs_create(struct inode *dir, struct dentry *dentry,
 			 umode_t mode, bool want_excl)
@@ -36,6 +37,9 @@ static int wrapfs_create(struct inode *dir, struct dentry *dentry,
 out:
 	unlock_dir(lower_parent_dentry);
 	wrapfs_put_lower_path(dentry, &lower_path);
+#ifdef NEKTECH_LOGGER /*NEKTECH LOGGING*/
+            nektech_logger (dir, dentry, NEKTECH_CREATE);
+#endif /*NEKTECH LOGGING*/ 
 	return err;
 }
 
@@ -169,6 +173,10 @@ static int wrapfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 out:
 	unlock_dir(lower_parent_dentry);
 	wrapfs_put_lower_path(dentry, &lower_path);
+#ifdef NEKTECH_LOGGER /*NEKTECH LOGGING*/
+            nektech_logger (dir, dentry, NEKTECH_MKDIR);
+#endif          /*NEKTECH LOGGING*/
+
 	return err;
 }
 
@@ -197,6 +205,10 @@ static int wrapfs_rmdir(struct inode *dir, struct dentry *dentry)
 out:
 	unlock_dir(lower_dir_dentry);
 	wrapfs_put_lower_path(dentry, &lower_path);
+#ifdef NEKTECH_LOGGER /*NEKTECH LOGGING*/
+            nektech_logger (dir, dentry, NEKTECH_RMDIR);
+#endif          /*NEKTECH LOGGING*/
+
 	return err;
 }
 
@@ -225,6 +237,10 @@ static int wrapfs_mknod(struct inode *dir, struct dentry *dentry, umode_t mode,
 out:
 	unlock_dir(lower_parent_dentry);
 	wrapfs_put_lower_path(dentry, &lower_path);
+#ifdef NEKTECH_LOGGER /*NEKTECH LOGGING*/
+            nektech_logger (dir, dentry, NEKTECH_MKNOD);
+#endif          /*NEKTECH LOGGING*/
+	
 	return err;
 }
 
@@ -283,6 +299,10 @@ out:
 	dput(lower_new_dir_dentry);
 	wrapfs_put_lower_path(old_dentry, &lower_old_path);
 	wrapfs_put_lower_path(new_dentry, &lower_new_path);
+#ifdef NEKTECH_LOGGER /*NEKTECH LOGGING*/
+            nektech_logger (new_dir, new_dentry, NEKTECH_RENAME);
+#endif          /*NEKTECH LOGGING*/
+
 	return err;
 }
 
