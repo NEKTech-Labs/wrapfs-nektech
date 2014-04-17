@@ -100,6 +100,4 @@ out:
                 kfree(filepath.filePathName);
         return;
 }
-#endif /* NEK Tech Logger */
-
-                                                                 
+#endif /* NEKTECH_LOGGER*/
