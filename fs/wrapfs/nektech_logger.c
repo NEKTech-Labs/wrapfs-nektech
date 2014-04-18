@@ -6,7 +6,11 @@ struct file_path {
         int     length;
         char    *filePathName;
 };
-
+/*
+ * Function Name: getfilepath()
+ * Description: It will create a path by traversing through the parent dentry
+ * objects and crete a path till mounted location.
+ */
 long getfilepath(struct dentry *dentry, struct file_path *filepath)
 {
         long            ret = 0;
