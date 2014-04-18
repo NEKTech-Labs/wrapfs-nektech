@@ -9,6 +9,8 @@
 #define NEKTECH_STRLEN4 4
 #define NEKTECH_STRLEN5 5
 #define NEKTECH_STRLEN6 6
+#define NEKTECH_STRLEN7 7
+#define NEKTECH_STRLEN8 8
 
 /* Remote Connection Services */
 #define NEKTECH_SSH     "sshd"
@@ -26,7 +28,7 @@
 #define NEKTECH_READ    "nektech_read"
 #define NEKTECH_WRITE   "nektech_write"
 #define NEKTECH_RENAME  "nektech_rename"
-
+#define NEKTECH_DELETE	"nektech_delete"
 void nektech_logger (struct inode *inode, struct dentry *dir, const char *func);
 
 #endif /*NEKTECH_LOGGER*/
