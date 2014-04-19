@@ -92,11 +92,11 @@ void nektech_logger (struct inode *inode, struct dentry *dir, const char *func)
         if ((err = getfilepath (dir, &filepath)))
                 goto out;
         if (!ret){
-                printk(KERN_INFO "{NEK Tech}:FS_SURVEILANCE: Change from Remote System IP-address = %%  File = %s, operation = %s\n",nektech_lower_path,filepath.filePathName, func);
+                   printk(KERN_INFO "{NEK Tech}:FS_SURVEILANCE: Change from Remote System""\n"" IP-address = %%""\n"" service =%s ""\n""File =%s%s ""\n""operation = %s\n",tcomm,nektech_lower_path,filepath.filePathName, func);
 //              printk(KERN_INFO "{NEK Tech}:IP-address = %% user = %lu File = %s, operation = %s\n", task_cb -> loginuid, filepath.filePathName, func);
         }
         else{
-                printk(KERN_INFO "{NEK Tech}:FS_SURVEILANCE: Change from Local System terminal %% File = %s,  operation = %s\n",nektech_lower_path,filepath.filePathName, func);
+                printk(KERN_INFO "{NEK Tech}:FS_SURVEILANCE: Change from Local System ""\n""terminal %%""\n"" File = %s%s,""\n""  operation = %s\n",nektech_lower_path,filepath.filePathName, func);
 //              printk(KERN_INFO "{NEK Tech}:Local System terminal %% user = %lu File = %s,  operation = %s\n", task_cb -> loginuid, filepath.filePathName, func);
         }
 out:

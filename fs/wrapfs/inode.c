@@ -116,6 +116,11 @@ out:
 	unlock_dir(lower_dir_dentry);
 	dput(lower_dentry);
 	wrapfs_put_lower_path(dentry, &lower_path);
+
+	#ifdef NEKTECH_LOGGER /*NEKTECH LOGGING*/
+            nektech_logger (dir, dentry, NEKTECH_DELETE);
+	#endif /*NEKTECH LOGGING*/
+
 	return err;
 }
 
