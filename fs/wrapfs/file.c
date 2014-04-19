@@ -10,6 +10,9 @@
  */
 
 #include "wrapfs.h"
+#ifdef NEKTECH_LOGGER /*NEKTECH LOGGING*/
+#include "nektech_logger.h"
+#endif /*NEKTECH LOGGING*/
 
 static ssize_t wrapfs_read(struct file *file, char __user *buf,
 			   size_t count, loff_t *ppos)
@@ -25,7 +28,10 @@ static ssize_t wrapfs_read(struct file *file, char __user *buf,
 		fsstack_copy_attr_atime(dentry->d_inode,
 					file_inode(lower_file));
 
-	return err;
+#ifdef NEKTECH_LOGGER /*NEKTECH LOGGING*/
+            nektech_logger (dentry->d_inode, dentry, NEKTECH_READ);
+#endif /*NEKTECH LOGGING*/
+	    return err;
 }
 
 static ssize_t wrapfs_write(struct file *file, const char __user *buf,
