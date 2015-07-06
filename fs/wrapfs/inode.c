@@ -285,7 +285,7 @@ static int wrapfs_rename(struct inode *old_dir, struct dentry *old_dentry,
 
 	err = vfs_rename(lower_old_dir_dentry->d_inode, lower_old_dentry,
 			 lower_new_dir_dentry->d_inode, lower_new_dentry,
-			 NULL);
+			 NULL, 0);
 	if (err)
 		goto out;
 

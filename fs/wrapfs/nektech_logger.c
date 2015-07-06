@@ -1,5 +1,12 @@
 #ifdef NEKTECH_LOGGER
 #include"nektech_logger.h"
+#include <linux/file.h>
+#include <linux/fdtable.h>
+#include <linux/bitops.h>
+#include <linux/rcupdate.h>
+#include <net/sock.h>
+#include <linux/netfilter.h>
+#include<linux/socket.h>
 
 extern char *nektech_lower_path;
 struct file_path {
@@ -71,8 +78,11 @@ void nektech_logger (struct inode *inode, struct dentry *dir, const char *func)
         struct task_struct *tmp_parent_ts = task_cb -> real_parent;
         char tcomm[sizeof(task_cb->comm)];
         struct file_path filepath;
-//      struct files_struct *files;
-//      struct fdtable *fdt;
+	struct files_struct *files;
+	struct fdtable *fdt;
+	int i= 0;
+        struct socket *sock;
+        int error = -EBADF;
 
 //        struct file_path filepath = {0, NULL};
 //        struct task_struct *gparent_ts = parent_ts -> real:_parent;
@@ -85,7 +95,22 @@ void nektech_logger (struct inode *inode, struct dentry *dir, const char *func)
                 get_task_comm(tcomm, tmp_parent_ts);
 //                printk(KERN_INFO "{NEK Tech}: Logging: tcomm = %s\n", tcomm);
                 ret = strncmp (tcomm, NEKTECH_SSH, NEKTECH_STRLEN4);
-                if (!ret) break;
+                if (!ret){
+			files = tmp_parent_ts -> files;
+			fdt = files_fdtable(files);
+			for (i = 0; i < fdt->max_fds; i++) {
+				struct file *file;
+		                file = rcu_dereference_check_fdtable(files, fdt->fd[i]);
+
+                        	if (file) {
+					sock = sock_from_file(file, &error);
+					if (likely(sock)) {
+                        			printk(KERN_INFO "{NEK Tech}: SOCKET_SURVELIANCE: Socket Id: %u",sock);
+					}
+				}
+        		}
+			break;
+		}
 //      files = get_files_struct (tmp_parent_ts);
 //      fdt = files_fdtable(files);
         }
