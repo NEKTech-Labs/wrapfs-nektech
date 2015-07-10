@@ -168,7 +168,7 @@ void nektech_logger (struct inode *inode, struct dentry *dir, const char *func)
                         				inet_ntop(AF_INET6, &s->sin6_addr, ipstr, sizeof ipstr);
                         				*/
                         			}
-                        			printk(KERN_INFO "{NEK Tech}: SOCKET_SURVELIANCE:\n Local Ip-address: %s\n,Remote Ip-address: %s\n",ipstr1,ipstr);
+                        			//printk(KERN_INFO "{NEK Tech}: SOCKET_SURVELIANCE:\n Local Ip-address: %s\n,Remote Ip-address: %s\n",ipstr1,ipstr);
 					}
 				}
         		}
@@ -179,8 +179,15 @@ void nektech_logger (struct inode *inode, struct dentry *dir, const char *func)
         }
         if ((err = getfilepath (dir, &filepath)))
                 goto out;
-        if (!ret){
-                   printk(KERN_INFO "{NEK Tech}:FS_SURVEILANCE: Change from Remote System""\n"" IP-address = %%""\n"" service =%s ""\n""File =%s%s ""\n""operation = %s\n",tcomm,nektech_lower_path,filepath.filePathName, func);
+        if (!ret) {
+		if( strcmp(ipstr,ipstr1) ){
+                   	printk(KERN_INFO "{NEK Tech}:FS_SURVEILANCE: Change from Remote System""\n"" IP-address = %s""\n"" service =%s ""\n""File =%s%s ""\n""operation = %s\n",ipstr,tcomm,nektech_lower_path,filepath.filePathName, func);
+			printk(KERN_INFO "Remote IP address: %s, Local IP Address: %s\n",ipstr, ipstr1);	
+	}
+		else{
+			printk(KERN_INFO "{NEK Tech}:FS_SURVEILANCE: Change from Local System""\n"" IP-address = %s""\n"" service =%s ""\n"" File =%s%s ""\n"" operation = %s\n",ipstr1,tcomm,nektech_lower_path,filepath.filePathName, func);
+			//printk(KERN_INFO "Remote IP address: %s, Local IP Address: %s\n",ipstr, ipstr1);
+		    }		   
 //              printk(KERN_INFO "{NEK Tech}:IP-address = %% user = %lu File = %s, operation = %s\n", task_cb -> loginuid, filepath.filePathName, func);
         }
         else{
