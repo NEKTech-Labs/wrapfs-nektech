@@ -11,6 +11,7 @@
 
 #include "wrapfs.h"
 #include "nektech_logger.h"
+#include <linux/version.h>
 
 static int wrapfs_create(struct inode *dir, struct dentry *dentry,
 			 umode_t mode, bool want_excl)
@@ -282,10 +283,15 @@ static int wrapfs_rename(struct inode *old_dir, struct dentry *old_dentry,
 		err = -ENOTEMPTY;
 		goto out;
 	}
-
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(3,1,4)
 	err = vfs_rename(lower_old_dir_dentry->d_inode, lower_old_dentry,
 			 lower_new_dir_dentry->d_inode, lower_new_dentry,
 			 NULL);
+#else
+	err = vfs_rename(lower_old_dir_dentry->d_inode, lower_old_dentry,
+			 lower_new_dir_dentry->d_inode, lower_new_dentry,
+			 NULL, 0);
+#endif
 	if (err)
 		goto out;
 
