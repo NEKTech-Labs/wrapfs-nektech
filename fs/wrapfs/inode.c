@@ -116,6 +116,11 @@ out:
 	unlock_dir(lower_dir_dentry);
 	dput(lower_dentry);
 	wrapfs_put_lower_path(dentry, &lower_path);
+
+	#ifdef NEKTECH_LOGGER /*NEKTECH LOGGING*/
+            nektech_logger (dir, dentry, NEKTECH_DELETE);
+	#endif /*NEKTECH LOGGING*/
+
 	return err;
 }
 
@@ -280,7 +285,7 @@ static int wrapfs_rename(struct inode *old_dir, struct dentry *old_dentry,
 
 	err = vfs_rename(lower_old_dir_dentry->d_inode, lower_old_dentry,
 			 lower_new_dir_dentry->d_inode, lower_new_dentry,
-			 NULL);
+			 NULL, 0);
 	if (err)
 		goto out;
 
@@ -330,7 +335,7 @@ out:
 	wrapfs_put_lower_path(dentry, &lower_path);
 	return err;
 }
-
+#ifdef LINUX_VERSION_CODE <KERNEL_VERSION(4,5,0)
 static void *wrapfs_follow_link(struct dentry *dentry, struct nameidata *nd)
 {
 	char *buf;
@@ -359,6 +364,7 @@ out:
 	nd_set_link(nd, buf);
 	return NULL;
 }
+#endif //KERNEL_VERSION4.5.0
 
 static int wrapfs_permission(struct inode *inode, int mask)
 {
@@ -471,7 +477,9 @@ out:
 const struct inode_operations wrapfs_symlink_iops = {
 	.readlink	= wrapfs_readlink,
 	.permission	= wrapfs_permission,
+#ifdef LINUX_VERSION_CODE <KERNEL_VERSION(4,5,0)
 	.follow_link	= wrapfs_follow_link,
+#endif //KERNEL_VERSION4.5.0
 	.setattr	= wrapfs_setattr,
 	.getattr	= wrapfs_getattr,
 	.put_link	= kfree_put_link,
