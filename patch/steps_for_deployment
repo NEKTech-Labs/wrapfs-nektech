@@ -39,10 +39,10 @@ $ make menuconfig
 		2) Scroll down and select : Miscellaneous filesystems  --->
 
 		3) Scroll down and select with spacebar and make it 
-       “<M> modular support features” :”Wrapfs stackable file system”.
+       		   “<M> modular support features” :”Wrapfs stackable file system”.
 
 		4) After this save the changes to the .config file, and exit from 
-       menuconfig UI.
+       		   menuconfig UI.
 
 
 Compile the Linux Kernel
@@ -61,7 +61,7 @@ Install the New Kernel
 	Install the new kernel on the system:
 $ make install
 	The make install command will create the following files in the 
-  /boot directory.
+  	/boot directory.
   
 	vmlinuz-x.x.x– The actual kernel
 	System.map-x.x.x – The symbols exported by the kernel.
