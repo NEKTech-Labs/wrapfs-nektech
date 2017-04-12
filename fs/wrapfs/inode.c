@@ -318,8 +318,7 @@ out:
 #else
 
 static int wrapfs_rename(struct inode *old_dir, struct dentry *old_dentry,
-                         struct inode *new_dir, struct dentry *new_dentry,
-                         unsigned int flags)
+                         struct inode *new_dir, struct dentry *new_dentry)
 {
         int err = 0;
         struct dentry *lower_old_dentry = NULL;
@@ -329,8 +328,6 @@ static int wrapfs_rename(struct inode *old_dir, struct dentry *old_dentry,
         struct dentry *trap = NULL;
         struct path lower_old_path, lower_new_path;
 
-        if (flags)
-                return -EINVAL;
 
         wrapfs_get_lower_path(old_dentry, &lower_old_path);
         wrapfs_get_lower_path(new_dentry, &lower_new_path);
@@ -489,7 +486,7 @@ static int wrapfs_setattr(struct dentry *dentry, struct iattr *ia)
 	 * calling notify_change on the lower inode.
 	 */
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,10)
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4,8,10)
 	 err = setattr_prepare(dentry, ia);
 #else
 	err = inode_change_ok(inode, ia);
