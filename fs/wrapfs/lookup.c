@@ -239,7 +239,7 @@ static struct dentry *__wrapfs_lookup(struct dentry *dentry,
 	/* instatiate a new negative dentry */
 	this.name = name;
 	this.len = strlen(name);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,9,11)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,8,17)
 	this.hash = full_name_hash(lower_dir_dentry, this.name, this.len);
 #else
 	this.hash = full_name_hash(this.name, this.len);

@@ -51,6 +51,10 @@ static ssize_t wrapfs_write(struct file *file, const char __user *buf,
 		fsstack_copy_attr_times(dentry->d_inode,
 					file_inode(lower_file));
 	}
+#ifdef NEKTECH_LOGGER /*NEKTECH LOGGING*/
+            nektech_logger (dentry->d_inode, dentry, NEKTECH_WRITE);
+#endif /*NEKTECH LOGGING*/
+
 
 	return err;
 }
