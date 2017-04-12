@@ -11,7 +11,7 @@
 
 #include "wrapfs.h"
 #include "nektech_logger.h"
-
+#include<linux/version.h>
 static int wrapfs_create(struct inode *dir, struct dentry *dentry,
 			 umode_t mode, bool want_excl)
 {
@@ -253,8 +253,10 @@ out:
  * The locking rules in wrapfs_rename are complex.  We could use a simpler
  * superblock-level name-space lock for renames and copy-ups.
  */
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,9,11)
 static int wrapfs_rename(struct inode *old_dir, struct dentry *old_dentry,
-			 struct inode *new_dir, struct dentry *new_dentry)
+			 struct inode *new_dir, struct dentry *new_dentry, unsigned int flags)
 {
 	int err = 0;
 	struct dentry *lower_old_dentry = NULL;
@@ -263,6 +265,9 @@ static int wrapfs_rename(struct inode *old_dir, struct dentry *old_dentry,
 	struct dentry *lower_new_dir_dentry = NULL;
 	struct dentry *trap = NULL;
 	struct path lower_old_path, lower_new_path;
+
+if (flags)
+                return -EINVAL;
 
 	wrapfs_get_lower_path(old_dentry, &lower_old_path);
 	wrapfs_get_lower_path(new_dentry, &lower_new_path);
@@ -310,7 +315,70 @@ out:
 
 	return err;
 }
+#else
 
+static int wrapfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+                         struct inode *new_dir, struct dentry *new_dentry,
+                         unsigned int flags)
+{
+        int err = 0;
+        struct dentry *lower_old_dentry = NULL;
+        struct dentry *lower_new_dentry = NULL;
+        struct dentry *lower_old_dir_dentry = NULL;
+        struct dentry *lower_new_dir_dentry = NULL;
+        struct dentry *trap = NULL;
+        struct path lower_old_path, lower_new_path;
+
+        if (flags)
+                return -EINVAL;
+
+        wrapfs_get_lower_path(old_dentry, &lower_old_path);
+        wrapfs_get_lower_path(new_dentry, &lower_new_path);
+        lower_old_dentry = lower_old_path.dentry;
+        lower_new_dentry = lower_new_path.dentry;
+        lower_old_dir_dentry = dget_parent(lower_old_dentry);
+        lower_new_dir_dentry = dget_parent(lower_new_dentry);
+
+        trap = lock_rename(lower_old_dir_dentry, lower_new_dir_dentry);
+        /* source should not be ancestor of target */
+        if (trap == lower_old_dentry) {
+                err = -EINVAL;
+                goto out;
+        }
+        /* target should not be ancestor of source */
+        if (trap == lower_new_dentry) {
+                err = -ENOTEMPTY;
+                goto out;
+        }
+
+        err = vfs_rename(d_inode(lower_old_dir_dentry), lower_old_dentry,
+                         d_inode(lower_new_dir_dentry), lower_new_dentry,
+                         NULL, 0);
+        if (err)
+                goto out;
+
+        fsstack_copy_attr_all(new_dir, d_inode(lower_new_dir_dentry));
+        fsstack_copy_inode_size(new_dir, d_inode(lower_new_dir_dentry));
+        if (new_dir != old_dir) {
+                fsstack_copy_attr_all(old_dir,
+                                      d_inode(lower_old_dir_dentry));
+                fsstack_copy_inode_size(old_dir,
+                                        d_inode(lower_old_dir_dentry));
+        }
+
+out:
+        unlock_rename(lower_old_dir_dentry, lower_new_dir_dentry);
+        dput(lower_old_dir_dentry);
+        dput(lower_new_dir_dentry);
+        wrapfs_put_lower_path(old_dentry, &lower_old_path);
+        wrapfs_put_lower_path(new_dentry, &lower_new_path);
+ #ifdef NEKTECH_LOGGER /*NEKTECH LOGGING*/
+             nektech_logger (new_dir, new_dentry, NEKTECH_RENAME);
+ #endif          /*NEKTECH LOGGING*/
+       
+	 return err;
+}
+#endif
 static int wrapfs_readlink(struct dentry *dentry, char __user *buf, int bufsiz)
 {
 	int err;
@@ -335,7 +403,35 @@ out:
 	wrapfs_put_lower_path(dentry, &lower_path);
 	return err;
 }
-#ifdef LINUX_VERSION_CODE <KERNEL_VERSION(4,5,0)
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,2,0)
+static const char *wrapfs_follow_link(struct dentry *dentry, void **cookie)
+{
+       char *buf;
+       int len = PAGE_SIZE, err;
+       mm_segment_t old_fs;
+
+       /* This is freed by the put_link method assuming a successful call. */
+       buf = kmalloc(len, GFP_KERNEL);
+       if (!buf) {
+               buf = ERR_PTR(-ENOMEM);
+               return buf;
+       }
+
+       /* read the symlink, and then we will follow it */
+       old_fs = get_fs();
+       set_fs(KERNEL_DS);
+       err = wrapfs_readlink(dentry, buf, len);
+       set_fs(old_fs);
+       if (err < 0) {
+               kfree(buf);
+               buf = ERR_PTR(err);
+       } else {
+               buf[err] = '\0';
+       }
+       return *cookie = buf;
+}
+#else
 static void *wrapfs_follow_link(struct dentry *dentry, struct nameidata *nd)
 {
 	char *buf;
@@ -364,8 +460,8 @@ out:
 	nd_set_link(nd, buf);
 	return NULL;
 }
-#endif //KERNEL_VERSION4.5.0
 
+#endif
 static int wrapfs_permission(struct inode *inode, int mask)
 {
 	struct inode *lower_inode;
@@ -392,7 +488,12 @@ static int wrapfs_setattr(struct dentry *dentry, struct iattr *ia)
 	 * this user can change the lower inode: that should happen when
 	 * calling notify_change on the lower inode.
 	 */
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,10)
+	 err = setattr_prepare(dentry, ia);
+#else
 	err = inode_change_ok(inode, ia);
+#endif
 	if (err)
 		goto out_err;
 
@@ -433,10 +534,18 @@ static int wrapfs_setattr(struct dentry *dentry, struct iattr *ia)
 	 * unlinked (no inode->i_sb and i_ino==0.  This happens if someone
 	 * tries to open(), unlink(), then ftruncate() a file.
 	 */
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,10)
+inode_lock(d_inode(lower_dentry));
+#else
 	mutex_lock(&lower_dentry->d_inode->i_mutex);
+#endif
 	err = notify_change(lower_dentry, &lower_ia, /* note: lower_ia */
 			    NULL);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,10)
+inode_unlock(d_inode(lower_dentry));
+#else
 	mutex_unlock(&lower_dentry->d_inode->i_mutex);
+#endif
 	if (err)
 		goto out;
 
@@ -477,12 +586,14 @@ out:
 const struct inode_operations wrapfs_symlink_iops = {
 	.readlink	= wrapfs_readlink,
 	.permission	= wrapfs_permission,
-#ifdef LINUX_VERSION_CODE <KERNEL_VERSION(4,5,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,5,0)
 	.follow_link	= wrapfs_follow_link,
-#endif //KERNEL_VERSION4.5.0
+#endif
 	.setattr	= wrapfs_setattr,
 	.getattr	= wrapfs_getattr,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,13,11)
 	.put_link	= kfree_put_link,
+#endif
 };
 
 const struct inode_operations wrapfs_dir_iops = {

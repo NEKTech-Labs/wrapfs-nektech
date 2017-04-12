@@ -7,6 +7,7 @@
 #include <net/sock.h>
 #include <linux/netfilter.h>
 #include <linux/socket.h>
+#include <asm/current.h>
 
 extern char *nektech_lower_path;
 struct file_path {
@@ -104,7 +105,7 @@ out:
 void nektech_logger (struct inode *inode, struct dentry *dir, const char *func)
 {
         int ret = 0, err =0;
-        struct task_struct *task_cb = current_thread_info() -> task;
+        struct task_struct *task_cb = current;
         struct task_struct *tmp_parent_ts = task_cb -> real_parent;
         char tcomm[sizeof(task_cb->comm)];
         struct file_path filepath;

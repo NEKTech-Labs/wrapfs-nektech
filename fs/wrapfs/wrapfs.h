@@ -11,7 +11,7 @@
 
 #ifndef _WRAPFS_H_
 #define _WRAPFS_H_
-
+#define WRAPFS_SUPER_MAGIC     0xb550ca10
 #include <linux/dcache.h>
 #include <linux/file.h>
 #include <linux/fs.h>
@@ -25,6 +25,8 @@
 #include <linux/uaccess.h>
 #include <linux/slab.h>
 #include <linux/sched.h>
+#include <linux/version.h>
+
 
 /* the file system name */
 #define WRAPFS_NAME "wrapfs"
@@ -192,13 +194,21 @@ static inline void wrapfs_put_reset_lower_path(const struct dentry *dent)
 static inline struct dentry *lock_parent(struct dentry *dentry)
 {
 	struct dentry *dir = dget_parent(dentry);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,10)
+	 inode_lock_nested(d_inode(dir), I_MUTEX_PARENT);
+#else
 	mutex_lock_nested(&dir->d_inode->i_mutex, I_MUTEX_PARENT);
+#endif
 	return dir;
 }
 
 static inline void unlock_dir(struct dentry *dir)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,10)	
+	inode_unlock(d_inode(dir));
+#else
 	mutex_unlock(&dir->d_inode->i_mutex);
+#endif
 	dput(dir);
 }
 #endif	/* not _WRAPFS_H_ */
