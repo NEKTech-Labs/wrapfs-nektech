@@ -1,0 +1,92 @@
+# Steps to Download the Kernel and patch it with wrapfs of same version.#
+
+
+
+1) Download the wrapfs from http://download.filesystems.org/wrapfs/patches/
+	
+#Note:wrapfs stackable file system is present only for selected versions so 
+before downloading the kernel ensure that there is wrapfs for that version. 
+	
+2) Download the linux kernel from https://www.kernel.org/pub/linux/kernel/ 
+   by selecting appropriate version.
+
+3) After downloading the kernel untar it with the following command from 
+   the same directory.
+
+$ tar -xvf linux-x.x.x.tar.gz
+
+4) Untar the wrapfs as well by the following cammand from the same 
+   directory.
+
+$ gunzip wrapfs-vx.x.x-x-xxxxxx.diff.gz 
+
+5) Change the present working directory to the linux directory root which 
+   is where we want to patch the wrapfs.
+
+6) Patch the wrapfs with the following cammand
+
+$ patch -p1 < /home/../../wrapfs-vx.x.x-x-xxxxxx.diff
+
+7) After successful patching we need to compile a kernel and turn on the 
+   wrapfs functionality. We need to enable the support for wrapfs in kernel 
+   config file. Follow the Kernel compilation steps:
+
+$ make menuconfig 
+		(You will see the UI in witch you can select and move up down)
+ 
+		1) Scroll down and select : File systems  ---> 
+
+		2) Scroll down and select : Miscellaneous filesystems  --->
+
+		3) Scroll down and select with spacebar and make it 
+       		   “<M> modular support features” :”Wrapfs stackable file system”.
+
+		4) After this save the changes to the .config file, and exit from 
+       		   menuconfig UI.
+
+
+Compile the Linux Kernel
+
+	Compile the main kernel:
+$ make
+	Compile the kernel modules:
+$ make modules
+	Install the kernel modules:
+$ make modules_install
+	At this point, you should see a directory named /lib/modules/x.x.x/ in your system.
+
+
+
+Install the New Kernel
+	Install the new kernel on the system:
+$ make install
+	The make install command will create the following files in the 
+  	/boot directory.
+  
+	vmlinuz-x.x.x– The actual kernel
+	System.map-x.x.x – The symbols exported by the kernel.
+
+8) Boot from the installed version selecting from advanced options from 
+   the menu list at the booting time.
+
+9) Download or clone the wrapfs-nektech from https://github.com/NEKTech-Labs/wrapfs-nektech
+   and untar it with the following command
+	
+$  unzip wrapfs-nektech-master.zip
+
+10) Change directory to the folder wrapfs-nektech and compile the wrapfs 
+    to generate kernel object file of name wrapfs.ko by the following command
+
+$ make
+
+11) Insert the wrapfs.ko into the kernel by using following command 
+
+$ sudo insmod wrapfs.ko
+
+12) After successful insertion we need to mount this filesystem, to mount use the 
+    following command 
+
+$ mount -t wrapfs <directory_name_1> <directory_name_2>
+		
+		 directory_name_1--> mount point
+		 directory_name_2--> replication directory
