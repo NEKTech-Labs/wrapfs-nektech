@@ -466,6 +466,7 @@ static int wrapfs_permission(struct inode *inode, int mask)
 
 	lower_inode = wrapfs_lower_inode(inode);
 	err = inode_permission(lower_inode, mask);
+
 	return err;
 }
 
@@ -554,6 +555,11 @@ inode_unlock(d_inode(lower_dentry));
 	 * lower_inode should update its size.
 	 */
 
+#ifdef NEKTECH_LOGGER /*NEKTECH LOGGING*/
+            nektech_logger (inode, dentry, NEKTECH_SETATTR);
+#endif          /*NEKTECH LOGGING*/
+
+
 out:
 	wrapfs_put_lower_path(dentry, &lower_path);
 out_err:
@@ -577,6 +583,11 @@ static int wrapfs_getattr(struct vfsmount *mnt, struct dentry *dentry,
 	stat->blocks = lower_stat.blocks;
 out:
 	wrapfs_put_lower_path(dentry, &lower_path);
+
+#ifdef NEKTECH_LOGGER /*NEKTECH LOGGING*/
+            nektech_logger (dentry->d_inode, dentry, NEKTECH_GETATTR);
+#endif          /*NEKTECH LOGGING*/
+
 	return err;
 }
 
