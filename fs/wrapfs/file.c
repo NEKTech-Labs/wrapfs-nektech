@@ -251,8 +251,12 @@ static int wrapfs_fsync(struct file *file, loff_t start, loff_t end,
 	struct file *lower_file;
 	struct path lower_path;
 	struct dentry *dentry = file->f_path.dentry;
-
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,16,39)
 	err = __generic_file_fsync(file, start, end, datasync);
+
+#else	
+	err = generic_file_fsync(file, start, end, datasync);
+#endif
 	if (err)
 		goto out;
 	lower_file = wrapfs_lower_file(file);

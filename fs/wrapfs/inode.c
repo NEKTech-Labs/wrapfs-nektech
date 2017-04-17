@@ -210,10 +210,11 @@ static int wrapfs_rmdir(struct inode *dir, struct dentry *dentry)
 out:
 	unlock_dir(lower_dir_dentry);
 	wrapfs_put_lower_path(dentry, &lower_path);
+	if(!err){
 #ifdef NEKTECH_LOGGER /*NEKTECH LOGGING*/
             nektech_logger (dir, dentry, NEKTECH_RMDIR);
 #endif          /*NEKTECH LOGGING*/
-
+	}
 	return err;
 }
 
@@ -347,11 +348,11 @@ static int wrapfs_rename(struct inode *old_dir, struct dentry *old_dentry,
                 err = -ENOTEMPTY;
                 goto out;
         }
-
+#if LINUX_VERSION_CODE >=KERNEL_VERSION(3,15,10)
         err = vfs_rename(d_inode(lower_old_dir_dentry), lower_old_dentry,
                          d_inode(lower_new_dir_dentry), lower_new_dentry,
                          NULL, 0);
-        if (err)
+	if (err)
                 goto out;
 
         fsstack_copy_attr_all(new_dir, d_inode(lower_new_dir_dentry));
@@ -361,8 +362,55 @@ static int wrapfs_rename(struct inode *old_dir, struct dentry *old_dentry,
                                       d_inode(lower_old_dir_dentry));
                 fsstack_copy_inode_size(old_dir,
                                         d_inode(lower_old_dir_dentry));
-        }
+	}
 
+#elif LINUX_VERSION_CODE >=KERNEL_VERSION(3,13,11) && LINUX_VERSION_CODE <=KERNEL_VERSION(3,14,79)
+
+	 err = vfs_rename(lower_old_dir_dentry->d_inode, lower_old_dentry,
+                         lower_new_dir_dentry->d_inode, lower_new_dentry,
+                         NULL);
+	 if (err)
+                goto out;
+
+        fsstack_copy_attr_all(new_dir, lower_new_dir_dentry->d_inode);
+        fsstack_copy_inode_size(new_dir, lower_new_dir_dentry->d_inode);
+        if (new_dir != old_dir) {
+                fsstack_copy_attr_all(old_dir,
+                                      lower_old_dir_dentry->d_inode);
+                fsstack_copy_inode_size(old_dir,
+                                        lower_old_dir_dentry->d_inode);
+	}
+#else
+         err = mnt_want_write(lower_old_path.mnt);
+        if (err)
+                goto out;
+        err = mnt_want_write(lower_new_path.mnt);
+        if (err)
+                goto out_drop_old_write;
+
+        err = vfs_rename(lower_old_dir_dentry->d_inode, lower_old_dentry,
+                         lower_new_dir_dentry->d_inode, lower_new_dentry);
+        if (err)
+                goto out_err;
+
+        fsstack_copy_attr_all(new_dir, lower_new_dir_dentry->d_inode, NULL);
+        fsstack_copy_inode_size(new_dir, lower_new_dir_dentry->d_inode);
+        if (new_dir != old_dir) {
+                fsstack_copy_attr_all(old_dir,
+                                      lower_old_dir_dentry->d_inode, NULL);
+                fsstack_copy_inode_size(old_dir,
+                                        lower_old_dir_dentry->d_inode);
+        }
+        /* update the hardlink count */
+        if (new_dentry->d_inode)
+                new_dentry->d_inode->i_nlink =
+                        lower_new_dir_dentry->d_inode->i_nlink;
+
+out_err:
+        mnt_drop_write(lower_new_path.mnt);
+out_drop_old_write:
+        mnt_drop_write(lower_old_path.mnt);
+#endif
 out:
         unlock_rename(lower_old_dir_dentry, lower_new_dir_dentry);
         dput(lower_old_dir_dentry);
